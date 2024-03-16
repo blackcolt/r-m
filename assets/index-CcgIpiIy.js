@@ -16,11 +16,38 @@ var __privateSet = (obj, member, value, setter) => {
   setter ? setter.call(obj, value) : member.set(obj, value);
   return value;
 };
+var __privateWrapper = (obj, member, setter, getter) => ({
+  set _(value) {
+    __privateSet(obj, member, value, setter);
+  },
+  get _() {
+    return __privateGet(obj, member, getter);
+  }
+});
 var __privateMethod = (obj, member, method) => {
   __accessCheck(obj, member, "access private method");
   return method;
 };
-var _focused, _cleanup, _setup, _a, _online, _cleanup2, _setup2, _b, _client, _currentQuery, _currentQueryInitialState, _currentResult, _currentResultState, _currentResultOptions, _selectError, _selectFn, _selectResult, _lastQueryWithDefinedData, _staleTimeoutId, _refetchIntervalId, _currentRefetchInterval, _trackedProps, _executeFetch, executeFetch_fn, _updateStaleTimeout, updateStaleTimeout_fn, _computeRefetchInterval, computeRefetchInterval_fn, _updateRefetchInterval, updateRefetchInterval_fn, _updateTimers, updateTimers_fn, _clearStaleTimeout, clearStaleTimeout_fn, _clearRefetchInterval, clearRefetchInterval_fn, _updateQuery, updateQuery_fn, _notify, notify_fn, _c;
+var _focused, _cleanup, _setup, _a, _online, _cleanup2, _setup2, _b, _gcTimeout, _c, _initialState, _revertState, _cache, _retryer, _observers, _defaultOptions, _abortSignalConsumed, _dispatch, dispatch_fn, _d, _queries, _e, _observers2, _defaultOptions2, _mutationCache, _retryer2, _dispatch2, dispatch_fn2, _f, _mutations, _mutationId, _resuming, _g, _queryCache, _mutationCache2, _defaultOptions3, _queryDefaults, _mutationDefaults, _mountCount, _unsubscribeFocus, _unsubscribeOnline, _h, _client, _currentQuery, _currentQueryInitialState, _currentResult, _currentResultState, _currentResultOptions, _selectError, _selectFn, _selectResult, _lastQueryWithDefinedData, _staleTimeoutId, _refetchIntervalId, _currentRefetchInterval, _trackedProps, _executeFetch, executeFetch_fn, _updateStaleTimeout, updateStaleTimeout_fn, _computeRefetchInterval, computeRefetchInterval_fn, _updateRefetchInterval, updateRefetchInterval_fn, _updateTimers, updateTimers_fn, _clearStaleTimeout, clearStaleTimeout_fn, _clearRefetchInterval, clearRefetchInterval_fn, _updateQuery, updateQuery_fn, _notify, notify_fn, _i;
+function _mergeNamespaces(n2, m2) {
+  for (var i = 0; i < m2.length; i++) {
+    const e = m2[i];
+    if (typeof e !== "string" && !Array.isArray(e)) {
+      for (const k2 in e) {
+        if (k2 !== "default" && !(k2 in n2)) {
+          const d = Object.getOwnPropertyDescriptor(e, k2);
+          if (d) {
+            Object.defineProperty(n2, k2, d.get ? d : {
+              enumerable: true,
+              get: () => e[k2]
+            });
+          }
+        }
+      }
+    }
+  }
+  return Object.freeze(Object.defineProperty(n2, Symbol.toStringTag, { value: "Module" }));
+}
 (function polyfill() {
   const relList = document.createElement("link").relList;
   if (relList && relList.supports && relList.supports("modulepreload")) {
@@ -62,6 +89,9 @@ var _focused, _cleanup, _setup, _a, _online, _cleanup2, _setup2, _b, _client, _c
     fetch(link.href, fetchOpts);
   }
 })();
+function getDefaultExportFromCjs(x2) {
+  return x2 && x2.__esModule && Object.prototype.hasOwnProperty.call(x2, "default") ? x2["default"] : x2;
+}
 var jsxRuntime = { exports: {} };
 var reactJsxRuntime_production_min = {};
 var react = { exports: {} };
@@ -351,6 +381,11 @@ react_production_min.version = "18.2.0";
   react.exports = react_production_min;
 }
 var reactExports = react.exports;
+const index = /* @__PURE__ */ getDefaultExportFromCjs(reactExports);
+const React = /* @__PURE__ */ _mergeNamespaces({
+  __proto__: null,
+  default: index
+}, [reactExports]);
 /**
  * @license React
  * react-jsx-runtime.production.min.js
@@ -7633,10 +7668,76 @@ var Action;
   Action2["Push"] = "PUSH";
   Action2["Replace"] = "REPLACE";
 })(Action || (Action = {}));
+const PopStateEventType = "popstate";
+function createBrowserHistory(options) {
+  if (options === void 0) {
+    options = {};
+  }
+  function createBrowserLocation(window2, globalHistory) {
+    let {
+      pathname,
+      search,
+      hash
+    } = window2.location;
+    return createLocation(
+      "",
+      {
+        pathname,
+        search,
+        hash
+      },
+      // state defaults to `null` because `window.history.state` does
+      globalHistory.state && globalHistory.state.usr || null,
+      globalHistory.state && globalHistory.state.key || "default"
+    );
+  }
+  function createBrowserHref(window2, to) {
+    return typeof to === "string" ? to : createPath(to);
+  }
+  return getUrlBasedHistory(createBrowserLocation, createBrowserHref, null, options);
+}
 function invariant(value, message) {
   if (value === false || value === null || typeof value === "undefined") {
     throw new Error(message);
   }
+}
+function warning(cond, message) {
+  if (!cond) {
+    if (typeof console !== "undefined")
+      console.warn(message);
+    try {
+      throw new Error(message);
+    } catch (e) {
+    }
+  }
+}
+function createKey() {
+  return Math.random().toString(36).substr(2, 8);
+}
+function getHistoryState(location, index2) {
+  return {
+    usr: location.state,
+    key: location.key,
+    idx: index2
+  };
+}
+function createLocation(current, to, state, key) {
+  if (state === void 0) {
+    state = null;
+  }
+  let location = _extends$2({
+    pathname: typeof current === "string" ? current : current.pathname,
+    search: "",
+    hash: ""
+  }, typeof to === "string" ? parsePath(to) : to, {
+    state,
+    // TODO: This could be cleaned up.  push/replace should probably just take
+    // full Locations now and avoid the need to run through this flow at all
+    // But that's a pretty big refactor to the current test suite so going to
+    // keep as is for the time being and just let any incoming keys take precedence
+    key: to && to.key || key || createKey()
+  });
+  return location;
 }
 function createPath(_ref) {
   let {
@@ -7669,6 +7770,129 @@ function parsePath(path) {
   }
   return parsedPath;
 }
+function getUrlBasedHistory(getLocation, createHref, validateLocation, options) {
+  if (options === void 0) {
+    options = {};
+  }
+  let {
+    window: window2 = document.defaultView,
+    v5Compat = false
+  } = options;
+  let globalHistory = window2.history;
+  let action = Action.Pop;
+  let listener = null;
+  let index2 = getIndex();
+  if (index2 == null) {
+    index2 = 0;
+    globalHistory.replaceState(_extends$2({}, globalHistory.state, {
+      idx: index2
+    }), "");
+  }
+  function getIndex() {
+    let state = globalHistory.state || {
+      idx: null
+    };
+    return state.idx;
+  }
+  function handlePop() {
+    action = Action.Pop;
+    let nextIndex = getIndex();
+    let delta = nextIndex == null ? null : nextIndex - index2;
+    index2 = nextIndex;
+    if (listener) {
+      listener({
+        action,
+        location: history.location,
+        delta
+      });
+    }
+  }
+  function push(to, state) {
+    action = Action.Push;
+    let location = createLocation(history.location, to, state);
+    if (validateLocation)
+      validateLocation(location, to);
+    index2 = getIndex() + 1;
+    let historyState = getHistoryState(location, index2);
+    let url = history.createHref(location);
+    try {
+      globalHistory.pushState(historyState, "", url);
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "DataCloneError") {
+        throw error;
+      }
+      window2.location.assign(url);
+    }
+    if (v5Compat && listener) {
+      listener({
+        action,
+        location: history.location,
+        delta: 1
+      });
+    }
+  }
+  function replace(to, state) {
+    action = Action.Replace;
+    let location = createLocation(history.location, to, state);
+    if (validateLocation)
+      validateLocation(location, to);
+    index2 = getIndex();
+    let historyState = getHistoryState(location, index2);
+    let url = history.createHref(location);
+    globalHistory.replaceState(historyState, "", url);
+    if (v5Compat && listener) {
+      listener({
+        action,
+        location: history.location,
+        delta: 0
+      });
+    }
+  }
+  function createURL(to) {
+    let base = window2.location.origin !== "null" ? window2.location.origin : window2.location.href;
+    let href = typeof to === "string" ? to : createPath(to);
+    href = href.replace(/ $/, "%20");
+    invariant(base, "No window.location.(origin|href) available to create URL for href: " + href);
+    return new URL(href, base);
+  }
+  let history = {
+    get action() {
+      return action;
+    },
+    get location() {
+      return getLocation(window2, globalHistory);
+    },
+    listen(fn) {
+      if (listener) {
+        throw new Error("A history only accepts one active listener");
+      }
+      window2.addEventListener(PopStateEventType, handlePop);
+      listener = fn;
+      return () => {
+        window2.removeEventListener(PopStateEventType, handlePop);
+        listener = null;
+      };
+    },
+    createHref(to) {
+      return createHref(window2, to);
+    },
+    createURL,
+    encodeLocation(to) {
+      let url = createURL(to);
+      return {
+        pathname: url.pathname,
+        search: url.search,
+        hash: url.hash
+      };
+    },
+    push,
+    replace,
+    go(n2) {
+      return globalHistory.go(n2);
+    }
+  };
+  return history;
+}
 var ResultType;
 (function(ResultType2) {
   ResultType2["data"] = "data";
@@ -7676,6 +7900,240 @@ var ResultType;
   ResultType2["redirect"] = "redirect";
   ResultType2["error"] = "error";
 })(ResultType || (ResultType = {}));
+function matchRoutes(routes, locationArg, basename) {
+  if (basename === void 0) {
+    basename = "/";
+  }
+  let location = typeof locationArg === "string" ? parsePath(locationArg) : locationArg;
+  let pathname = stripBasename(location.pathname || "/", basename);
+  if (pathname == null) {
+    return null;
+  }
+  let branches = flattenRoutes(routes);
+  rankRouteBranches(branches);
+  let matches = null;
+  for (let i = 0; matches == null && i < branches.length; ++i) {
+    let decoded = decodePath(pathname);
+    matches = matchRouteBranch(branches[i], decoded);
+  }
+  return matches;
+}
+function flattenRoutes(routes, branches, parentsMeta, parentPath) {
+  if (branches === void 0) {
+    branches = [];
+  }
+  if (parentsMeta === void 0) {
+    parentsMeta = [];
+  }
+  if (parentPath === void 0) {
+    parentPath = "";
+  }
+  let flattenRoute = (route, index2, relativePath) => {
+    let meta = {
+      relativePath: relativePath === void 0 ? route.path || "" : relativePath,
+      caseSensitive: route.caseSensitive === true,
+      childrenIndex: index2,
+      route
+    };
+    if (meta.relativePath.startsWith("/")) {
+      invariant(meta.relativePath.startsWith(parentPath), 'Absolute route path "' + meta.relativePath + '" nested under path ' + ('"' + parentPath + '" is not valid. An absolute child route path ') + "must start with the combined path of all its parent routes.");
+      meta.relativePath = meta.relativePath.slice(parentPath.length);
+    }
+    let path = joinPaths([parentPath, meta.relativePath]);
+    let routesMeta = parentsMeta.concat(meta);
+    if (route.children && route.children.length > 0) {
+      invariant(
+        // Our types know better, but runtime JS may not!
+        // @ts-expect-error
+        route.index !== true,
+        "Index routes must not have child routes. Please remove " + ('all child routes from route path "' + path + '".')
+      );
+      flattenRoutes(route.children, branches, routesMeta, path);
+    }
+    if (route.path == null && !route.index) {
+      return;
+    }
+    branches.push({
+      path,
+      score: computeScore(path, route.index),
+      routesMeta
+    });
+  };
+  routes.forEach((route, index2) => {
+    var _route$path;
+    if (route.path === "" || !((_route$path = route.path) != null && _route$path.includes("?"))) {
+      flattenRoute(route, index2);
+    } else {
+      for (let exploded of explodeOptionalSegments(route.path)) {
+        flattenRoute(route, index2, exploded);
+      }
+    }
+  });
+  return branches;
+}
+function explodeOptionalSegments(path) {
+  let segments = path.split("/");
+  if (segments.length === 0)
+    return [];
+  let [first, ...rest] = segments;
+  let isOptional = first.endsWith("?");
+  let required = first.replace(/\?$/, "");
+  if (rest.length === 0) {
+    return isOptional ? [required, ""] : [required];
+  }
+  let restExploded = explodeOptionalSegments(rest.join("/"));
+  let result = [];
+  result.push(...restExploded.map((subpath) => subpath === "" ? required : [required, subpath].join("/")));
+  if (isOptional) {
+    result.push(...restExploded);
+  }
+  return result.map((exploded) => path.startsWith("/") && exploded === "" ? "/" : exploded);
+}
+function rankRouteBranches(branches) {
+  branches.sort((a, b) => a.score !== b.score ? b.score - a.score : compareIndexes(a.routesMeta.map((meta) => meta.childrenIndex), b.routesMeta.map((meta) => meta.childrenIndex)));
+}
+const paramRe = /^:[\w-]+$/;
+const dynamicSegmentValue = 3;
+const indexRouteValue = 2;
+const emptySegmentValue = 1;
+const staticSegmentValue = 10;
+const splatPenalty = -2;
+const isSplat = (s) => s === "*";
+function computeScore(path, index2) {
+  let segments = path.split("/");
+  let initialScore = segments.length;
+  if (segments.some(isSplat)) {
+    initialScore += splatPenalty;
+  }
+  if (index2) {
+    initialScore += indexRouteValue;
+  }
+  return segments.filter((s) => !isSplat(s)).reduce((score, segment) => score + (paramRe.test(segment) ? dynamicSegmentValue : segment === "" ? emptySegmentValue : staticSegmentValue), initialScore);
+}
+function compareIndexes(a, b) {
+  let siblings = a.length === b.length && a.slice(0, -1).every((n2, i) => n2 === b[i]);
+  return siblings ? (
+    // If two routes are siblings, we should try to match the earlier sibling
+    // first. This allows people to have fine-grained control over the matching
+    // behavior by simply putting routes with identical paths in the order they
+    // want them tried.
+    a[a.length - 1] - b[b.length - 1]
+  ) : (
+    // Otherwise, it doesn't really make sense to rank non-siblings by index,
+    // so they sort equally.
+    0
+  );
+}
+function matchRouteBranch(branch, pathname) {
+  let {
+    routesMeta
+  } = branch;
+  let matchedParams = {};
+  let matchedPathname = "/";
+  let matches = [];
+  for (let i = 0; i < routesMeta.length; ++i) {
+    let meta = routesMeta[i];
+    let end = i === routesMeta.length - 1;
+    let remainingPathname = matchedPathname === "/" ? pathname : pathname.slice(matchedPathname.length) || "/";
+    let match = matchPath({
+      path: meta.relativePath,
+      caseSensitive: meta.caseSensitive,
+      end
+    }, remainingPathname);
+    if (!match)
+      return null;
+    Object.assign(matchedParams, match.params);
+    let route = meta.route;
+    matches.push({
+      // TODO: Can this as be avoided?
+      params: matchedParams,
+      pathname: joinPaths([matchedPathname, match.pathname]),
+      pathnameBase: normalizePathname(joinPaths([matchedPathname, match.pathnameBase])),
+      route
+    });
+    if (match.pathnameBase !== "/") {
+      matchedPathname = joinPaths([matchedPathname, match.pathnameBase]);
+    }
+  }
+  return matches;
+}
+function matchPath(pattern, pathname) {
+  if (typeof pattern === "string") {
+    pattern = {
+      path: pattern,
+      caseSensitive: false,
+      end: true
+    };
+  }
+  let [matcher, compiledParams] = compilePath(pattern.path, pattern.caseSensitive, pattern.end);
+  let match = pathname.match(matcher);
+  if (!match)
+    return null;
+  let matchedPathname = match[0];
+  let pathnameBase = matchedPathname.replace(/(.)\/+$/, "$1");
+  let captureGroups = match.slice(1);
+  let params = compiledParams.reduce((memo, _ref, index2) => {
+    let {
+      paramName,
+      isOptional
+    } = _ref;
+    if (paramName === "*") {
+      let splatValue = captureGroups[index2] || "";
+      pathnameBase = matchedPathname.slice(0, matchedPathname.length - splatValue.length).replace(/(.)\/+$/, "$1");
+    }
+    const value = captureGroups[index2];
+    if (isOptional && !value) {
+      memo[paramName] = void 0;
+    } else {
+      memo[paramName] = (value || "").replace(/%2F/g, "/");
+    }
+    return memo;
+  }, {});
+  return {
+    params,
+    pathname: matchedPathname,
+    pathnameBase,
+    pattern
+  };
+}
+function compilePath(path, caseSensitive, end) {
+  if (caseSensitive === void 0) {
+    caseSensitive = false;
+  }
+  if (end === void 0) {
+    end = true;
+  }
+  warning(path === "*" || !path.endsWith("*") || path.endsWith("/*"), 'Route path "' + path + '" will be treated as if it were ' + ('"' + path.replace(/\*$/, "/*") + '" because the `*` character must ') + "always follow a `/` in the pattern. To get rid of this warning, " + ('please change the route path to "' + path.replace(/\*$/, "/*") + '".'));
+  let params = [];
+  let regexpSource = "^" + path.replace(/\/*\*?$/, "").replace(/^\/*/, "/").replace(/[\\.*+^${}|()[\]]/g, "\\$&").replace(/\/:([\w-]+)(\?)?/g, (_, paramName, isOptional) => {
+    params.push({
+      paramName,
+      isOptional: isOptional != null
+    });
+    return isOptional ? "/?([^\\/]+)?" : "/([^\\/]+)";
+  });
+  if (path.endsWith("*")) {
+    params.push({
+      paramName: "*"
+    });
+    regexpSource += path === "*" || path === "/*" ? "(.*)$" : "(?:\\/(.+)|\\/*)$";
+  } else if (end) {
+    regexpSource += "\\/*$";
+  } else if (path !== "" && path !== "/") {
+    regexpSource += "(?:(?=\\/|$))";
+  } else
+    ;
+  let matcher = new RegExp(regexpSource, caseSensitive ? void 0 : "i");
+  return [matcher, params];
+}
+function decodePath(value) {
+  try {
+    return value.split("/").map((v2) => decodeURIComponent(v2).replace(/\//g, "%2F")).join("/");
+  } catch (error) {
+    warning(false, 'The URL path "' + value + '" could not be decoded because it is is a malformed URL segment. This is probably due to a bad percent ' + ("encoding (" + error + ")."));
+    return value;
+  }
+}
 function stripBasename(pathname, basename) {
   if (basename === "/")
     return pathname;
@@ -7722,7 +8180,7 @@ function getInvalidPathError(char, field, dest, path) {
   return "Cannot include a '" + char + "' character in a manually specified " + ("`to." + field + "` field [" + JSON.stringify(path) + "].  Please separate it out to the ") + ("`to." + dest + "` field. Alternatively you may provide the full path as ") + 'a string in <Link to="..."> and the router will parse it for you.';
 }
 function getPathContributingMatches(matches) {
-  return matches.filter((match, index) => index === 0 || match.route.path && match.route.path.length > 0);
+  return matches.filter((match, index2) => index2 === 0 || match.route.path && match.route.path.length > 0);
 }
 function getResolveToMatches(matches, v7_relativeSplatPath) {
   let pathMatches = getPathContributingMatches(matches);
@@ -7770,8 +8228,12 @@ function resolveTo(toArg, routePathnames, locationPathname, isPathRelative) {
   return path;
 }
 const joinPaths = (paths) => paths.join("/").replace(/\/\/+/g, "/");
+const normalizePathname = (pathname) => pathname.replace(/\/+$/, "").replace(/^\/*/, "/");
 const normalizeSearch = (search) => !search || search === "?" ? "" : search.startsWith("?") ? search : "?" + search;
 const normalizeHash = (hash) => !hash || hash === "#" ? "" : hash.startsWith("#") ? hash : "#" + hash;
+function isRouteErrorResponse(error) {
+  return error != null && typeof error.status === "number" && typeof error.statusText === "string" && typeof error.internal === "boolean" && "data" in error;
+}
 const validMutationMethodsArr = ["post", "put", "patch", "delete"];
 new Set(validMutationMethodsArr);
 const validRequestMethodsArr = ["get", ...validMutationMethodsArr];
@@ -7801,6 +8263,7 @@ function _extends$1() {
   return _extends$1.apply(this, arguments);
 }
 const DataRouterContext = /* @__PURE__ */ reactExports.createContext(null);
+const DataRouterStateContext = /* @__PURE__ */ reactExports.createContext(null);
 const NavigationContext = /* @__PURE__ */ reactExports.createContext(null);
 const LocationContext = /* @__PURE__ */ reactExports.createContext(null);
 const RouteContext = /* @__PURE__ */ reactExports.createContext({
@@ -7808,6 +8271,7 @@ const RouteContext = /* @__PURE__ */ reactExports.createContext({
   matches: [],
   isDataRoute: false
 });
+const RouteErrorContext = /* @__PURE__ */ reactExports.createContext(null);
 function useHref(to, _temp) {
   let {
     relative
@@ -7890,6 +8354,13 @@ function useNavigateUnstable() {
   }, [basename, navigator2, routePathnamesJson, locationPathname, dataRouterContext]);
   return navigate;
 }
+function useParams() {
+  let {
+    matches
+  } = reactExports.useContext(RouteContext);
+  let routeMatch = matches[matches.length - 1];
+  return routeMatch ? routeMatch.params : {};
+}
 function useResolvedPath(to, _temp2) {
   let {
     relative
@@ -7905,6 +8376,253 @@ function useResolvedPath(to, _temp2) {
   } = useLocation();
   let routePathnamesJson = JSON.stringify(getResolveToMatches(matches, future.v7_relativeSplatPath));
   return reactExports.useMemo(() => resolveTo(to, JSON.parse(routePathnamesJson), locationPathname, relative === "path"), [to, routePathnamesJson, locationPathname, relative]);
+}
+function useRoutes(routes, locationArg) {
+  return useRoutesImpl(routes, locationArg);
+}
+function useRoutesImpl(routes, locationArg, dataRouterState, future) {
+  !useInRouterContext() ? invariant(false) : void 0;
+  let {
+    navigator: navigator2
+  } = reactExports.useContext(NavigationContext);
+  let {
+    matches: parentMatches
+  } = reactExports.useContext(RouteContext);
+  let routeMatch = parentMatches[parentMatches.length - 1];
+  let parentParams = routeMatch ? routeMatch.params : {};
+  routeMatch ? routeMatch.pathname : "/";
+  let parentPathnameBase = routeMatch ? routeMatch.pathnameBase : "/";
+  routeMatch && routeMatch.route;
+  let locationFromContext = useLocation();
+  let location;
+  if (locationArg) {
+    var _parsedLocationArg$pa;
+    let parsedLocationArg = typeof locationArg === "string" ? parsePath(locationArg) : locationArg;
+    !(parentPathnameBase === "/" || ((_parsedLocationArg$pa = parsedLocationArg.pathname) == null ? void 0 : _parsedLocationArg$pa.startsWith(parentPathnameBase))) ? invariant(false) : void 0;
+    location = parsedLocationArg;
+  } else {
+    location = locationFromContext;
+  }
+  let pathname = location.pathname || "/";
+  let remainingPathname = pathname;
+  if (parentPathnameBase !== "/") {
+    let parentSegments = parentPathnameBase.replace(/^\//, "").split("/");
+    let segments = pathname.replace(/^\//, "").split("/");
+    remainingPathname = "/" + segments.slice(parentSegments.length).join("/");
+  }
+  let matches = matchRoutes(routes, {
+    pathname: remainingPathname
+  });
+  let renderedMatches = _renderMatches(matches && matches.map((match) => Object.assign({}, match, {
+    params: Object.assign({}, parentParams, match.params),
+    pathname: joinPaths([
+      parentPathnameBase,
+      // Re-encode pathnames that were decoded inside matchRoutes
+      navigator2.encodeLocation ? navigator2.encodeLocation(match.pathname).pathname : match.pathname
+    ]),
+    pathnameBase: match.pathnameBase === "/" ? parentPathnameBase : joinPaths([
+      parentPathnameBase,
+      // Re-encode pathnames that were decoded inside matchRoutes
+      navigator2.encodeLocation ? navigator2.encodeLocation(match.pathnameBase).pathname : match.pathnameBase
+    ])
+  })), parentMatches, dataRouterState, future);
+  if (locationArg && renderedMatches) {
+    return /* @__PURE__ */ reactExports.createElement(LocationContext.Provider, {
+      value: {
+        location: _extends$1({
+          pathname: "/",
+          search: "",
+          hash: "",
+          state: null,
+          key: "default"
+        }, location),
+        navigationType: Action.Pop
+      }
+    }, renderedMatches);
+  }
+  return renderedMatches;
+}
+function DefaultErrorComponent() {
+  let error = useRouteError();
+  let message = isRouteErrorResponse(error) ? error.status + " " + error.statusText : error instanceof Error ? error.message : JSON.stringify(error);
+  let stack = error instanceof Error ? error.stack : null;
+  let lightgrey = "rgba(200,200,200, 0.5)";
+  let preStyles = {
+    padding: "0.5rem",
+    backgroundColor: lightgrey
+  };
+  let devInfo = null;
+  return /* @__PURE__ */ reactExports.createElement(reactExports.Fragment, null, /* @__PURE__ */ reactExports.createElement("h2", null, "Unexpected Application Error!"), /* @__PURE__ */ reactExports.createElement("h3", {
+    style: {
+      fontStyle: "italic"
+    }
+  }, message), stack ? /* @__PURE__ */ reactExports.createElement("pre", {
+    style: preStyles
+  }, stack) : null, devInfo);
+}
+const defaultErrorElement = /* @__PURE__ */ reactExports.createElement(DefaultErrorComponent, null);
+class RenderErrorBoundary extends reactExports.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      location: props.location,
+      revalidation: props.revalidation,
+      error: props.error
+    };
+  }
+  static getDerivedStateFromError(error) {
+    return {
+      error
+    };
+  }
+  static getDerivedStateFromProps(props, state) {
+    if (state.location !== props.location || state.revalidation !== "idle" && props.revalidation === "idle") {
+      return {
+        error: props.error,
+        location: props.location,
+        revalidation: props.revalidation
+      };
+    }
+    return {
+      error: props.error !== void 0 ? props.error : state.error,
+      location: state.location,
+      revalidation: props.revalidation || state.revalidation
+    };
+  }
+  componentDidCatch(error, errorInfo) {
+    console.error("React Router caught the following error during render", error, errorInfo);
+  }
+  render() {
+    return this.state.error !== void 0 ? /* @__PURE__ */ reactExports.createElement(RouteContext.Provider, {
+      value: this.props.routeContext
+    }, /* @__PURE__ */ reactExports.createElement(RouteErrorContext.Provider, {
+      value: this.state.error,
+      children: this.props.component
+    })) : this.props.children;
+  }
+}
+function RenderedRoute(_ref) {
+  let {
+    routeContext,
+    match,
+    children
+  } = _ref;
+  let dataRouterContext = reactExports.useContext(DataRouterContext);
+  if (dataRouterContext && dataRouterContext.static && dataRouterContext.staticContext && (match.route.errorElement || match.route.ErrorBoundary)) {
+    dataRouterContext.staticContext._deepestRenderedBoundaryId = match.route.id;
+  }
+  return /* @__PURE__ */ reactExports.createElement(RouteContext.Provider, {
+    value: routeContext
+  }, children);
+}
+function _renderMatches(matches, parentMatches, dataRouterState, future) {
+  var _dataRouterState2;
+  if (parentMatches === void 0) {
+    parentMatches = [];
+  }
+  if (dataRouterState === void 0) {
+    dataRouterState = null;
+  }
+  if (future === void 0) {
+    future = null;
+  }
+  if (matches == null) {
+    var _dataRouterState;
+    if ((_dataRouterState = dataRouterState) != null && _dataRouterState.errors) {
+      matches = dataRouterState.matches;
+    } else {
+      return null;
+    }
+  }
+  let renderedMatches = matches;
+  let errors = (_dataRouterState2 = dataRouterState) == null ? void 0 : _dataRouterState2.errors;
+  if (errors != null) {
+    let errorIndex = renderedMatches.findIndex((m2) => m2.route.id && (errors == null ? void 0 : errors[m2.route.id]));
+    !(errorIndex >= 0) ? invariant(false) : void 0;
+    renderedMatches = renderedMatches.slice(0, Math.min(renderedMatches.length, errorIndex + 1));
+  }
+  let renderFallback = false;
+  let fallbackIndex = -1;
+  if (dataRouterState && future && future.v7_partialHydration) {
+    for (let i = 0; i < renderedMatches.length; i++) {
+      let match = renderedMatches[i];
+      if (match.route.HydrateFallback || match.route.hydrateFallbackElement) {
+        fallbackIndex = i;
+      }
+      if (match.route.id) {
+        let {
+          loaderData,
+          errors: errors2
+        } = dataRouterState;
+        let needsToRunLoader = match.route.loader && loaderData[match.route.id] === void 0 && (!errors2 || errors2[match.route.id] === void 0);
+        if (match.route.lazy || needsToRunLoader) {
+          renderFallback = true;
+          if (fallbackIndex >= 0) {
+            renderedMatches = renderedMatches.slice(0, fallbackIndex + 1);
+          } else {
+            renderedMatches = [renderedMatches[0]];
+          }
+          break;
+        }
+      }
+    }
+  }
+  return renderedMatches.reduceRight((outlet, match, index2) => {
+    let error;
+    let shouldRenderHydrateFallback = false;
+    let errorElement = null;
+    let hydrateFallbackElement = null;
+    if (dataRouterState) {
+      error = errors && match.route.id ? errors[match.route.id] : void 0;
+      errorElement = match.route.errorElement || defaultErrorElement;
+      if (renderFallback) {
+        if (fallbackIndex < 0 && index2 === 0) {
+          warningOnce("route-fallback", false);
+          shouldRenderHydrateFallback = true;
+          hydrateFallbackElement = null;
+        } else if (fallbackIndex === index2) {
+          shouldRenderHydrateFallback = true;
+          hydrateFallbackElement = match.route.hydrateFallbackElement || null;
+        }
+      }
+    }
+    let matches2 = parentMatches.concat(renderedMatches.slice(0, index2 + 1));
+    let getChildren = () => {
+      let children;
+      if (error) {
+        children = errorElement;
+      } else if (shouldRenderHydrateFallback) {
+        children = hydrateFallbackElement;
+      } else if (match.route.Component) {
+        children = /* @__PURE__ */ reactExports.createElement(match.route.Component, null);
+      } else if (match.route.element) {
+        children = match.route.element;
+      } else {
+        children = outlet;
+      }
+      return /* @__PURE__ */ reactExports.createElement(RenderedRoute, {
+        match,
+        routeContext: {
+          outlet,
+          matches: matches2,
+          isDataRoute: dataRouterState != null
+        },
+        children
+      });
+    };
+    return dataRouterState && (match.route.ErrorBoundary || match.route.errorElement || index2 === 0) ? /* @__PURE__ */ reactExports.createElement(RenderErrorBoundary, {
+      location: dataRouterState.location,
+      revalidation: dataRouterState.revalidation,
+      component: errorElement,
+      error,
+      children: getChildren(),
+      routeContext: {
+        outlet: null,
+        matches: matches2,
+        isDataRoute: true
+      }
+    }) : getChildren();
+  }, null);
 }
 var DataRouterHook$1 = /* @__PURE__ */ function(DataRouterHook2) {
   DataRouterHook2["UseBlocker"] = "useBlocker";
@@ -7930,6 +8648,11 @@ function useDataRouterContext(hookName) {
   !ctx ? invariant(false) : void 0;
   return ctx;
 }
+function useDataRouterState(hookName) {
+  let state = reactExports.useContext(DataRouterStateContext);
+  !state ? invariant(false) : void 0;
+  return state;
+}
 function useRouteContext(hookName) {
   let route = reactExports.useContext(RouteContext);
   !route ? invariant(false) : void 0;
@@ -7940,6 +8663,16 @@ function useCurrentRouteId(hookName) {
   let thisRoute = route.matches[route.matches.length - 1];
   !thisRoute.route.id ? invariant(false) : void 0;
   return thisRoute.route.id;
+}
+function useRouteError() {
+  var _state$errors;
+  let error = reactExports.useContext(RouteErrorContext);
+  let state = useDataRouterState(DataRouterStateHook$1.UseRouteError);
+  let routeId = useCurrentRouteId(DataRouterStateHook$1.UseRouteError);
+  if (error !== void 0) {
+    return error;
+  }
+  return (_state$errors = state.errors) == null ? void 0 : _state$errors[routeId];
 }
 function useNavigateStable() {
   let {
@@ -7966,8 +8699,119 @@ function useNavigateStable() {
   }, [router, id2]);
   return navigate;
 }
+const alreadyWarned = {};
+function warningOnce(key, cond, message) {
+  if (!cond && !alreadyWarned[key]) {
+    alreadyWarned[key] = true;
+  }
+}
+function Route(_props) {
+  invariant(false);
+}
+function Router(_ref5) {
+  let {
+    basename: basenameProp = "/",
+    children = null,
+    location: locationProp,
+    navigationType = Action.Pop,
+    navigator: navigator2,
+    static: staticProp = false,
+    future
+  } = _ref5;
+  !!useInRouterContext() ? invariant(false) : void 0;
+  let basename = basenameProp.replace(/^\/*/, "/");
+  let navigationContext = reactExports.useMemo(() => ({
+    basename,
+    navigator: navigator2,
+    static: staticProp,
+    future: _extends$1({
+      v7_relativeSplatPath: false
+    }, future)
+  }), [basename, future, navigator2, staticProp]);
+  if (typeof locationProp === "string") {
+    locationProp = parsePath(locationProp);
+  }
+  let {
+    pathname = "/",
+    search = "",
+    hash = "",
+    state = null,
+    key = "default"
+  } = locationProp;
+  let locationContext = reactExports.useMemo(() => {
+    let trailingPathname = stripBasename(pathname, basename);
+    if (trailingPathname == null) {
+      return null;
+    }
+    return {
+      location: {
+        pathname: trailingPathname,
+        search,
+        hash,
+        state,
+        key
+      },
+      navigationType
+    };
+  }, [basename, pathname, search, hash, state, key, navigationType]);
+  if (locationContext == null) {
+    return null;
+  }
+  return /* @__PURE__ */ reactExports.createElement(NavigationContext.Provider, {
+    value: navigationContext
+  }, /* @__PURE__ */ reactExports.createElement(LocationContext.Provider, {
+    children,
+    value: locationContext
+  }));
+}
+function Routes(_ref6) {
+  let {
+    children,
+    location
+  } = _ref6;
+  return useRoutes(createRoutesFromChildren(children), location);
+}
 new Promise(() => {
 });
+function createRoutesFromChildren(children, parentPath) {
+  if (parentPath === void 0) {
+    parentPath = [];
+  }
+  let routes = [];
+  reactExports.Children.forEach(children, (element, index2) => {
+    if (!/* @__PURE__ */ reactExports.isValidElement(element)) {
+      return;
+    }
+    let treePath = [...parentPath, index2];
+    if (element.type === reactExports.Fragment) {
+      routes.push.apply(routes, createRoutesFromChildren(element.props.children, treePath));
+      return;
+    }
+    !(element.type === Route) ? invariant(false) : void 0;
+    !(!element.props.index || !element.props.children) ? invariant(false) : void 0;
+    let route = {
+      id: element.props.id || treePath.join("-"),
+      caseSensitive: element.props.caseSensitive,
+      element: element.props.element,
+      Component: element.props.Component,
+      index: element.props.index,
+      path: element.props.path,
+      loader: element.props.loader,
+      action: element.props.action,
+      errorElement: element.props.errorElement,
+      ErrorBoundary: element.props.ErrorBoundary,
+      hasErrorBoundary: element.props.ErrorBoundary != null || element.props.errorElement != null,
+      shouldRevalidate: element.props.shouldRevalidate,
+      handle: element.props.handle,
+      lazy: element.props.lazy
+    };
+    if (element.props.children) {
+      route.children = createRoutesFromChildren(element.props.children, treePath);
+    }
+    routes.push(route);
+  });
+  return routes;
+}
 /**
  * React Router DOM v6.22.3
  *
@@ -8019,6 +8863,43 @@ const REACT_ROUTER_VERSION = "6";
 try {
   window.__reactRouterVersion = REACT_ROUTER_VERSION;
 } catch (e) {
+}
+const START_TRANSITION = "startTransition";
+const startTransitionImpl = React[START_TRANSITION];
+function BrowserRouter(_ref4) {
+  let {
+    basename,
+    children,
+    future,
+    window: window2
+  } = _ref4;
+  let historyRef = reactExports.useRef();
+  if (historyRef.current == null) {
+    historyRef.current = createBrowserHistory({
+      window: window2,
+      v5Compat: true
+    });
+  }
+  let history = historyRef.current;
+  let [state, setStateImpl] = reactExports.useState({
+    action: history.action,
+    location: history.location
+  });
+  let {
+    v7_startTransition
+  } = future || {};
+  let setState = reactExports.useCallback((newState) => {
+    v7_startTransition && startTransitionImpl ? startTransitionImpl(() => setStateImpl(newState)) : setStateImpl(newState);
+  }, [setStateImpl, v7_startTransition]);
+  reactExports.useLayoutEffect(() => history.listen(setState), [history, setState]);
+  return /* @__PURE__ */ reactExports.createElement(Router, {
+    basename,
+    children,
+    location: state.location,
+    navigationType: state.action,
+    navigator: history,
+    future
+  });
 }
 const isBrowser = typeof window !== "undefined" && typeof window.document !== "undefined" && typeof window.document.createElement !== "undefined";
 const ABSOLUTE_URL_REGEX = /^(?:[a-z][a-z0-9+.-]*:|\/\/)/i;
@@ -8171,11 +9052,99 @@ var isServer = typeof window === "undefined" || "Deno" in globalThis;
 function noop() {
   return void 0;
 }
+function functionalUpdate(updater, input) {
+  return typeof updater === "function" ? updater(input) : updater;
+}
 function isValidTimeout(value) {
   return typeof value === "number" && value >= 0 && value !== Infinity;
 }
 function timeUntilStale(updatedAt, staleTime) {
   return Math.max(updatedAt + (staleTime || 0) - Date.now(), 0);
+}
+function matchQuery(filters, query) {
+  const {
+    type = "all",
+    exact,
+    fetchStatus,
+    predicate,
+    queryKey,
+    stale
+  } = filters;
+  if (queryKey) {
+    if (exact) {
+      if (query.queryHash !== hashQueryKeyByOptions(queryKey, query.options)) {
+        return false;
+      }
+    } else if (!partialMatchKey(query.queryKey, queryKey)) {
+      return false;
+    }
+  }
+  if (type !== "all") {
+    const isActive = query.isActive();
+    if (type === "active" && !isActive) {
+      return false;
+    }
+    if (type === "inactive" && isActive) {
+      return false;
+    }
+  }
+  if (typeof stale === "boolean" && query.isStale() !== stale) {
+    return false;
+  }
+  if (fetchStatus && fetchStatus !== query.state.fetchStatus) {
+    return false;
+  }
+  if (predicate && !predicate(query)) {
+    return false;
+  }
+  return true;
+}
+function matchMutation(filters, mutation) {
+  const { exact, status, predicate, mutationKey } = filters;
+  if (mutationKey) {
+    if (!mutation.options.mutationKey) {
+      return false;
+    }
+    if (exact) {
+      if (hashKey(mutation.options.mutationKey) !== hashKey(mutationKey)) {
+        return false;
+      }
+    } else if (!partialMatchKey(mutation.options.mutationKey, mutationKey)) {
+      return false;
+    }
+  }
+  if (status && mutation.state.status !== status) {
+    return false;
+  }
+  if (predicate && !predicate(mutation)) {
+    return false;
+  }
+  return true;
+}
+function hashQueryKeyByOptions(queryKey, options) {
+  const hashFn = (options == null ? void 0 : options.queryKeyHashFn) || hashKey;
+  return hashFn(queryKey);
+}
+function hashKey(queryKey) {
+  return JSON.stringify(
+    queryKey,
+    (_, val) => isPlainObject(val) ? Object.keys(val).sort().reduce((result, key) => {
+      result[key] = val[key];
+      return result;
+    }, {}) : val
+  );
+}
+function partialMatchKey(a, b) {
+  if (a === b) {
+    return true;
+  }
+  if (typeof a !== typeof b) {
+    return false;
+  }
+  if (a && b && typeof a === "object" && typeof b === "object") {
+    return !Object.keys(b).some((key) => !partialMatchKey(a[key], b[key]));
+  }
+  return false;
 }
 function replaceEqualDeep(a, b) {
   if (a === b) {
@@ -8239,6 +9208,11 @@ function isPlainObject(o) {
 function hasObjectPrototype(o) {
   return Object.prototype.toString.call(o) === "[object Object]";
 }
+function sleep(ms) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
 function replaceData(prevData, data, options) {
   if (typeof options.structuralSharing === "function") {
     return options.structuralSharing(prevData, data);
@@ -8247,6 +9221,15 @@ function replaceData(prevData, data, options) {
   }
   return data;
 }
+function addToEnd(items, item, max = 0) {
+  const newItems = [...items, item];
+  return max && newItems.length > max ? newItems.slice(1) : newItems;
+}
+function addToStart(items, item, max = 0) {
+  const newItems = [item, ...items];
+  return max && newItems.length > max ? newItems.slice(0, -1) : newItems;
+}
+var skipToken = Symbol();
 var FocusManager = (_a = class extends Subscribable {
   constructor() {
     super();
@@ -8362,8 +9345,137 @@ var OnlineManager = (_b = class extends Subscribable {
   }
 }, _online = new WeakMap(), _cleanup2 = new WeakMap(), _setup2 = new WeakMap(), _b);
 var onlineManager = new OnlineManager();
+function defaultRetryDelay(failureCount) {
+  return Math.min(1e3 * 2 ** failureCount, 3e4);
+}
 function canFetch(networkMode) {
   return (networkMode ?? "online") === "online" ? onlineManager.isOnline() : true;
+}
+var CancelledError = class {
+  constructor(options) {
+    this.revert = options == null ? void 0 : options.revert;
+    this.silent = options == null ? void 0 : options.silent;
+  }
+};
+function isCancelledError(value) {
+  return value instanceof CancelledError;
+}
+function createRetryer(config) {
+  let isRetryCancelled = false;
+  let failureCount = 0;
+  let isResolved = false;
+  let continueFn;
+  let promiseResolve;
+  let promiseReject;
+  const promise = new Promise((outerResolve, outerReject) => {
+    promiseResolve = outerResolve;
+    promiseReject = outerReject;
+  });
+  const cancel = (cancelOptions) => {
+    var _a2;
+    if (!isResolved) {
+      reject(new CancelledError(cancelOptions));
+      (_a2 = config.abort) == null ? void 0 : _a2.call(config);
+    }
+  };
+  const cancelRetry = () => {
+    isRetryCancelled = true;
+  };
+  const continueRetry = () => {
+    isRetryCancelled = false;
+  };
+  const shouldPause = () => !focusManager.isFocused() || config.networkMode !== "always" && !onlineManager.isOnline();
+  const resolve = (value) => {
+    var _a2;
+    if (!isResolved) {
+      isResolved = true;
+      (_a2 = config.onSuccess) == null ? void 0 : _a2.call(config, value);
+      continueFn == null ? void 0 : continueFn();
+      promiseResolve(value);
+    }
+  };
+  const reject = (value) => {
+    var _a2;
+    if (!isResolved) {
+      isResolved = true;
+      (_a2 = config.onError) == null ? void 0 : _a2.call(config, value);
+      continueFn == null ? void 0 : continueFn();
+      promiseReject(value);
+    }
+  };
+  const pause = () => {
+    return new Promise((continueResolve) => {
+      var _a2;
+      continueFn = (value) => {
+        const canContinue = isResolved || !shouldPause();
+        if (canContinue) {
+          continueResolve(value);
+        }
+        return canContinue;
+      };
+      (_a2 = config.onPause) == null ? void 0 : _a2.call(config);
+    }).then(() => {
+      var _a2;
+      continueFn = void 0;
+      if (!isResolved) {
+        (_a2 = config.onContinue) == null ? void 0 : _a2.call(config);
+      }
+    });
+  };
+  const run = () => {
+    if (isResolved) {
+      return;
+    }
+    let promiseOrValue;
+    try {
+      promiseOrValue = config.fn();
+    } catch (error) {
+      promiseOrValue = Promise.reject(error);
+    }
+    Promise.resolve(promiseOrValue).then(resolve).catch((error) => {
+      var _a2;
+      if (isResolved) {
+        return;
+      }
+      const retry = config.retry ?? (isServer ? 0 : 3);
+      const retryDelay = config.retryDelay ?? defaultRetryDelay;
+      const delay = typeof retryDelay === "function" ? retryDelay(failureCount, error) : retryDelay;
+      const shouldRetry = retry === true || typeof retry === "number" && failureCount < retry || typeof retry === "function" && retry(failureCount, error);
+      if (isRetryCancelled || !shouldRetry) {
+        reject(error);
+        return;
+      }
+      failureCount++;
+      (_a2 = config.onFail) == null ? void 0 : _a2.call(config, failureCount, error);
+      sleep(delay).then(() => {
+        if (shouldPause()) {
+          return pause();
+        }
+        return;
+      }).then(() => {
+        if (isRetryCancelled) {
+          reject(error);
+        } else {
+          run();
+        }
+      });
+    });
+  };
+  if (canFetch(config.networkMode)) {
+    run();
+  } else {
+    pause().then(run);
+  }
+  return {
+    promise,
+    cancel,
+    continue: () => {
+      const didContinue = continueFn == null ? void 0 : continueFn();
+      return didContinue ? promise : Promise.resolve();
+    },
+    cancelRetry,
+    continueRetry
+  };
 }
 function createNotifyManager() {
   let queue = [];
@@ -8436,6 +9548,367 @@ function createNotifyManager() {
   };
 }
 var notifyManager = createNotifyManager();
+var Removable = (_c = class {
+  constructor() {
+    __privateAdd(this, _gcTimeout, void 0);
+  }
+  destroy() {
+    this.clearGcTimeout();
+  }
+  scheduleGc() {
+    this.clearGcTimeout();
+    if (isValidTimeout(this.gcTime)) {
+      __privateSet(this, _gcTimeout, setTimeout(() => {
+        this.optionalRemove();
+      }, this.gcTime));
+    }
+  }
+  updateGcTime(newGcTime) {
+    this.gcTime = Math.max(
+      this.gcTime || 0,
+      newGcTime ?? (isServer ? Infinity : 5 * 60 * 1e3)
+    );
+  }
+  clearGcTimeout() {
+    if (__privateGet(this, _gcTimeout)) {
+      clearTimeout(__privateGet(this, _gcTimeout));
+      __privateSet(this, _gcTimeout, void 0);
+    }
+  }
+}, _gcTimeout = new WeakMap(), _c);
+var Query = (_d = class extends Removable {
+  constructor(config) {
+    super();
+    __privateAdd(this, _dispatch);
+    __privateAdd(this, _initialState, void 0);
+    __privateAdd(this, _revertState, void 0);
+    __privateAdd(this, _cache, void 0);
+    __privateAdd(this, _retryer, void 0);
+    __privateAdd(this, _observers, void 0);
+    __privateAdd(this, _defaultOptions, void 0);
+    __privateAdd(this, _abortSignalConsumed, void 0);
+    __privateSet(this, _abortSignalConsumed, false);
+    __privateSet(this, _defaultOptions, config.defaultOptions);
+    this.setOptions(config.options);
+    __privateSet(this, _observers, []);
+    __privateSet(this, _cache, config.cache);
+    this.queryKey = config.queryKey;
+    this.queryHash = config.queryHash;
+    __privateSet(this, _initialState, config.state || getDefaultState$1(this.options));
+    this.state = __privateGet(this, _initialState);
+    this.scheduleGc();
+  }
+  get meta() {
+    return this.options.meta;
+  }
+  setOptions(options) {
+    this.options = { ...__privateGet(this, _defaultOptions), ...options };
+    this.updateGcTime(this.options.gcTime);
+  }
+  optionalRemove() {
+    if (!__privateGet(this, _observers).length && this.state.fetchStatus === "idle") {
+      __privateGet(this, _cache).remove(this);
+    }
+  }
+  setData(newData, options) {
+    const data = replaceData(this.state.data, newData, this.options);
+    __privateMethod(this, _dispatch, dispatch_fn).call(this, {
+      data,
+      type: "success",
+      dataUpdatedAt: options == null ? void 0 : options.updatedAt,
+      manual: options == null ? void 0 : options.manual
+    });
+    return data;
+  }
+  setState(state, setStateOptions) {
+    __privateMethod(this, _dispatch, dispatch_fn).call(this, { type: "setState", state, setStateOptions });
+  }
+  cancel(options) {
+    var _a2, _b2;
+    const promise = (_a2 = __privateGet(this, _retryer)) == null ? void 0 : _a2.promise;
+    (_b2 = __privateGet(this, _retryer)) == null ? void 0 : _b2.cancel(options);
+    return promise ? promise.then(noop).catch(noop) : Promise.resolve();
+  }
+  destroy() {
+    super.destroy();
+    this.cancel({ silent: true });
+  }
+  reset() {
+    this.destroy();
+    this.setState(__privateGet(this, _initialState));
+  }
+  isActive() {
+    return __privateGet(this, _observers).some(
+      (observer) => observer.options.enabled !== false
+    );
+  }
+  isDisabled() {
+    return this.getObserversCount() > 0 && !this.isActive();
+  }
+  isStale() {
+    if (this.state.isInvalidated) {
+      return true;
+    }
+    if (this.getObserversCount() > 0) {
+      return __privateGet(this, _observers).some(
+        (observer) => observer.getCurrentResult().isStale
+      );
+    }
+    return this.state.data === void 0;
+  }
+  isStaleByTime(staleTime = 0) {
+    return this.state.isInvalidated || this.state.data === void 0 || !timeUntilStale(this.state.dataUpdatedAt, staleTime);
+  }
+  onFocus() {
+    var _a2;
+    const observer = __privateGet(this, _observers).find((x2) => x2.shouldFetchOnWindowFocus());
+    observer == null ? void 0 : observer.refetch({ cancelRefetch: false });
+    (_a2 = __privateGet(this, _retryer)) == null ? void 0 : _a2.continue();
+  }
+  onOnline() {
+    var _a2;
+    const observer = __privateGet(this, _observers).find((x2) => x2.shouldFetchOnReconnect());
+    observer == null ? void 0 : observer.refetch({ cancelRefetch: false });
+    (_a2 = __privateGet(this, _retryer)) == null ? void 0 : _a2.continue();
+  }
+  addObserver(observer) {
+    if (!__privateGet(this, _observers).includes(observer)) {
+      __privateGet(this, _observers).push(observer);
+      this.clearGcTimeout();
+      __privateGet(this, _cache).notify({ type: "observerAdded", query: this, observer });
+    }
+  }
+  removeObserver(observer) {
+    if (__privateGet(this, _observers).includes(observer)) {
+      __privateSet(this, _observers, __privateGet(this, _observers).filter((x2) => x2 !== observer));
+      if (!__privateGet(this, _observers).length) {
+        if (__privateGet(this, _retryer)) {
+          if (__privateGet(this, _abortSignalConsumed)) {
+            __privateGet(this, _retryer).cancel({ revert: true });
+          } else {
+            __privateGet(this, _retryer).cancelRetry();
+          }
+        }
+        this.scheduleGc();
+      }
+      __privateGet(this, _cache).notify({ type: "observerRemoved", query: this, observer });
+    }
+  }
+  getObserversCount() {
+    return __privateGet(this, _observers).length;
+  }
+  invalidate() {
+    if (!this.state.isInvalidated) {
+      __privateMethod(this, _dispatch, dispatch_fn).call(this, { type: "invalidate" });
+    }
+  }
+  fetch(options, fetchOptions) {
+    var _a2, _b2, _c2;
+    if (this.state.fetchStatus !== "idle") {
+      if (this.state.data !== void 0 && (fetchOptions == null ? void 0 : fetchOptions.cancelRefetch)) {
+        this.cancel({ silent: true });
+      } else if (__privateGet(this, _retryer)) {
+        __privateGet(this, _retryer).continueRetry();
+        return __privateGet(this, _retryer).promise;
+      }
+    }
+    if (options) {
+      this.setOptions(options);
+    }
+    if (!this.options.queryFn) {
+      const observer = __privateGet(this, _observers).find((x2) => x2.options.queryFn);
+      if (observer) {
+        this.setOptions(observer.options);
+      }
+    }
+    const abortController = new AbortController();
+    const queryFnContext = {
+      queryKey: this.queryKey,
+      meta: this.meta
+    };
+    const addSignalProperty = (object) => {
+      Object.defineProperty(object, "signal", {
+        enumerable: true,
+        get: () => {
+          __privateSet(this, _abortSignalConsumed, true);
+          return abortController.signal;
+        }
+      });
+    };
+    addSignalProperty(queryFnContext);
+    const fetchFn = () => {
+      if (!this.options.queryFn || this.options.queryFn === skipToken) {
+        return Promise.reject(
+          new Error(`Missing queryFn: '${this.options.queryHash}'`)
+        );
+      }
+      __privateSet(this, _abortSignalConsumed, false);
+      if (this.options.persister) {
+        return this.options.persister(
+          this.options.queryFn,
+          queryFnContext,
+          this
+        );
+      }
+      return this.options.queryFn(
+        queryFnContext
+      );
+    };
+    const context = {
+      fetchOptions,
+      options: this.options,
+      queryKey: this.queryKey,
+      state: this.state,
+      fetchFn
+    };
+    addSignalProperty(context);
+    (_a2 = this.options.behavior) == null ? void 0 : _a2.onFetch(
+      context,
+      this
+    );
+    __privateSet(this, _revertState, this.state);
+    if (this.state.fetchStatus === "idle" || this.state.fetchMeta !== ((_b2 = context.fetchOptions) == null ? void 0 : _b2.meta)) {
+      __privateMethod(this, _dispatch, dispatch_fn).call(this, { type: "fetch", meta: (_c2 = context.fetchOptions) == null ? void 0 : _c2.meta });
+    }
+    const onError = (error) => {
+      var _a3, _b3, _c3, _d2;
+      if (!(isCancelledError(error) && error.silent)) {
+        __privateMethod(this, _dispatch, dispatch_fn).call(this, {
+          type: "error",
+          error
+        });
+      }
+      if (!isCancelledError(error)) {
+        (_b3 = (_a3 = __privateGet(this, _cache).config).onError) == null ? void 0 : _b3.call(
+          _a3,
+          error,
+          this
+        );
+        (_d2 = (_c3 = __privateGet(this, _cache).config).onSettled) == null ? void 0 : _d2.call(
+          _c3,
+          this.state.data,
+          error,
+          this
+        );
+      }
+      if (!this.isFetchingOptimistic) {
+        this.scheduleGc();
+      }
+      this.isFetchingOptimistic = false;
+    };
+    __privateSet(this, _retryer, createRetryer({
+      fn: context.fetchFn,
+      abort: abortController.abort.bind(abortController),
+      onSuccess: (data) => {
+        var _a3, _b3, _c3, _d2;
+        if (data === void 0) {
+          onError(new Error(`${this.queryHash} data is undefined`));
+          return;
+        }
+        this.setData(data);
+        (_b3 = (_a3 = __privateGet(this, _cache).config).onSuccess) == null ? void 0 : _b3.call(_a3, data, this);
+        (_d2 = (_c3 = __privateGet(this, _cache).config).onSettled) == null ? void 0 : _d2.call(
+          _c3,
+          data,
+          this.state.error,
+          this
+        );
+        if (!this.isFetchingOptimistic) {
+          this.scheduleGc();
+        }
+        this.isFetchingOptimistic = false;
+      },
+      onError,
+      onFail: (failureCount, error) => {
+        __privateMethod(this, _dispatch, dispatch_fn).call(this, { type: "failed", failureCount, error });
+      },
+      onPause: () => {
+        __privateMethod(this, _dispatch, dispatch_fn).call(this, { type: "pause" });
+      },
+      onContinue: () => {
+        __privateMethod(this, _dispatch, dispatch_fn).call(this, { type: "continue" });
+      },
+      retry: context.options.retry,
+      retryDelay: context.options.retryDelay,
+      networkMode: context.options.networkMode
+    }));
+    return __privateGet(this, _retryer).promise;
+  }
+}, _initialState = new WeakMap(), _revertState = new WeakMap(), _cache = new WeakMap(), _retryer = new WeakMap(), _observers = new WeakMap(), _defaultOptions = new WeakMap(), _abortSignalConsumed = new WeakMap(), _dispatch = new WeakSet(), dispatch_fn = function(action) {
+  const reducer = (state) => {
+    switch (action.type) {
+      case "failed":
+        return {
+          ...state,
+          fetchFailureCount: action.failureCount,
+          fetchFailureReason: action.error
+        };
+      case "pause":
+        return {
+          ...state,
+          fetchStatus: "paused"
+        };
+      case "continue":
+        return {
+          ...state,
+          fetchStatus: "fetching"
+        };
+      case "fetch":
+        return {
+          ...state,
+          ...fetchState(state.data, this.options),
+          fetchMeta: action.meta ?? null
+        };
+      case "success":
+        return {
+          ...state,
+          data: action.data,
+          dataUpdateCount: state.dataUpdateCount + 1,
+          dataUpdatedAt: action.dataUpdatedAt ?? Date.now(),
+          error: null,
+          isInvalidated: false,
+          status: "success",
+          ...!action.manual && {
+            fetchStatus: "idle",
+            fetchFailureCount: 0,
+            fetchFailureReason: null
+          }
+        };
+      case "error":
+        const error = action.error;
+        if (isCancelledError(error) && error.revert && __privateGet(this, _revertState)) {
+          return { ...__privateGet(this, _revertState), fetchStatus: "idle" };
+        }
+        return {
+          ...state,
+          error,
+          errorUpdateCount: state.errorUpdateCount + 1,
+          errorUpdatedAt: Date.now(),
+          fetchFailureCount: state.fetchFailureCount + 1,
+          fetchFailureReason: error,
+          fetchStatus: "idle",
+          status: "error"
+        };
+      case "invalidate":
+        return {
+          ...state,
+          isInvalidated: true
+        };
+      case "setState":
+        return {
+          ...state,
+          ...action.state
+        };
+    }
+  };
+  this.state = reducer(this.state);
+  notifyManager.batch(() => {
+    __privateGet(this, _observers).forEach((observer) => {
+      observer.onQueryUpdate();
+    });
+    __privateGet(this, _cache).notify({ query: this, type: "updated", action });
+  });
+}, _d);
 function fetchState(data, options) {
   return {
     fetchFailureCount: 0,
@@ -8447,7 +9920,809 @@ function fetchState(data, options) {
     }
   };
 }
-var QueryObserver = (_c = class extends Subscribable {
+function getDefaultState$1(options) {
+  const data = typeof options.initialData === "function" ? options.initialData() : options.initialData;
+  const hasData = data !== void 0;
+  const initialDataUpdatedAt = hasData ? typeof options.initialDataUpdatedAt === "function" ? options.initialDataUpdatedAt() : options.initialDataUpdatedAt : 0;
+  return {
+    data,
+    dataUpdateCount: 0,
+    dataUpdatedAt: hasData ? initialDataUpdatedAt ?? Date.now() : 0,
+    error: null,
+    errorUpdateCount: 0,
+    errorUpdatedAt: 0,
+    fetchFailureCount: 0,
+    fetchFailureReason: null,
+    fetchMeta: null,
+    isInvalidated: false,
+    status: hasData ? "success" : "pending",
+    fetchStatus: "idle"
+  };
+}
+var QueryCache = (_e = class extends Subscribable {
+  constructor(config = {}) {
+    super();
+    __privateAdd(this, _queries, void 0);
+    this.config = config;
+    __privateSet(this, _queries, /* @__PURE__ */ new Map());
+  }
+  build(client2, options, state) {
+    const queryKey = options.queryKey;
+    const queryHash = options.queryHash ?? hashQueryKeyByOptions(queryKey, options);
+    let query = this.get(queryHash);
+    if (!query) {
+      query = new Query({
+        cache: this,
+        queryKey,
+        queryHash,
+        options: client2.defaultQueryOptions(options),
+        state,
+        defaultOptions: client2.getQueryDefaults(queryKey)
+      });
+      this.add(query);
+    }
+    return query;
+  }
+  add(query) {
+    if (!__privateGet(this, _queries).has(query.queryHash)) {
+      __privateGet(this, _queries).set(query.queryHash, query);
+      this.notify({
+        type: "added",
+        query
+      });
+    }
+  }
+  remove(query) {
+    const queryInMap = __privateGet(this, _queries).get(query.queryHash);
+    if (queryInMap) {
+      query.destroy();
+      if (queryInMap === query) {
+        __privateGet(this, _queries).delete(query.queryHash);
+      }
+      this.notify({ type: "removed", query });
+    }
+  }
+  clear() {
+    notifyManager.batch(() => {
+      this.getAll().forEach((query) => {
+        this.remove(query);
+      });
+    });
+  }
+  get(queryHash) {
+    return __privateGet(this, _queries).get(queryHash);
+  }
+  getAll() {
+    return [...__privateGet(this, _queries).values()];
+  }
+  find(filters) {
+    const defaultedFilters = { exact: true, ...filters };
+    return this.getAll().find(
+      (query) => matchQuery(defaultedFilters, query)
+    );
+  }
+  findAll(filters = {}) {
+    const queries = this.getAll();
+    return Object.keys(filters).length > 0 ? queries.filter((query) => matchQuery(filters, query)) : queries;
+  }
+  notify(event) {
+    notifyManager.batch(() => {
+      this.listeners.forEach((listener) => {
+        listener(event);
+      });
+    });
+  }
+  onFocus() {
+    notifyManager.batch(() => {
+      this.getAll().forEach((query) => {
+        query.onFocus();
+      });
+    });
+  }
+  onOnline() {
+    notifyManager.batch(() => {
+      this.getAll().forEach((query) => {
+        query.onOnline();
+      });
+    });
+  }
+}, _queries = new WeakMap(), _e);
+var Mutation = (_f = class extends Removable {
+  constructor(config) {
+    super();
+    __privateAdd(this, _dispatch2);
+    __privateAdd(this, _observers2, void 0);
+    __privateAdd(this, _defaultOptions2, void 0);
+    __privateAdd(this, _mutationCache, void 0);
+    __privateAdd(this, _retryer2, void 0);
+    this.mutationId = config.mutationId;
+    __privateSet(this, _defaultOptions2, config.defaultOptions);
+    __privateSet(this, _mutationCache, config.mutationCache);
+    __privateSet(this, _observers2, []);
+    this.state = config.state || getDefaultState();
+    this.setOptions(config.options);
+    this.scheduleGc();
+  }
+  setOptions(options) {
+    this.options = { ...__privateGet(this, _defaultOptions2), ...options };
+    this.updateGcTime(this.options.gcTime);
+  }
+  get meta() {
+    return this.options.meta;
+  }
+  addObserver(observer) {
+    if (!__privateGet(this, _observers2).includes(observer)) {
+      __privateGet(this, _observers2).push(observer);
+      this.clearGcTimeout();
+      __privateGet(this, _mutationCache).notify({
+        type: "observerAdded",
+        mutation: this,
+        observer
+      });
+    }
+  }
+  removeObserver(observer) {
+    __privateSet(this, _observers2, __privateGet(this, _observers2).filter((x2) => x2 !== observer));
+    this.scheduleGc();
+    __privateGet(this, _mutationCache).notify({
+      type: "observerRemoved",
+      mutation: this,
+      observer
+    });
+  }
+  optionalRemove() {
+    if (!__privateGet(this, _observers2).length) {
+      if (this.state.status === "pending") {
+        this.scheduleGc();
+      } else {
+        __privateGet(this, _mutationCache).remove(this);
+      }
+    }
+  }
+  continue() {
+    var _a2;
+    return ((_a2 = __privateGet(this, _retryer2)) == null ? void 0 : _a2.continue()) ?? // continuing a mutation assumes that variables are set, mutation must have been dehydrated before
+    this.execute(this.state.variables);
+  }
+  async execute(variables) {
+    var _a2, _b2, _c2, _d2, _e2, _f2, _g2, _h2, _i2, _j, _k, _l, _m, _n, _o, _p, _q, _r, _s, _t;
+    const executeMutation = () => {
+      __privateSet(this, _retryer2, createRetryer({
+        fn: () => {
+          if (!this.options.mutationFn) {
+            return Promise.reject(new Error("No mutationFn found"));
+          }
+          return this.options.mutationFn(variables);
+        },
+        onFail: (failureCount, error) => {
+          __privateMethod(this, _dispatch2, dispatch_fn2).call(this, { type: "failed", failureCount, error });
+        },
+        onPause: () => {
+          __privateMethod(this, _dispatch2, dispatch_fn2).call(this, { type: "pause" });
+        },
+        onContinue: () => {
+          __privateMethod(this, _dispatch2, dispatch_fn2).call(this, { type: "continue" });
+        },
+        retry: this.options.retry ?? 0,
+        retryDelay: this.options.retryDelay,
+        networkMode: this.options.networkMode
+      }));
+      return __privateGet(this, _retryer2).promise;
+    };
+    const restored = this.state.status === "pending";
+    try {
+      if (!restored) {
+        __privateMethod(this, _dispatch2, dispatch_fn2).call(this, { type: "pending", variables });
+        await ((_b2 = (_a2 = __privateGet(this, _mutationCache).config).onMutate) == null ? void 0 : _b2.call(
+          _a2,
+          variables,
+          this
+        ));
+        const context = await ((_d2 = (_c2 = this.options).onMutate) == null ? void 0 : _d2.call(_c2, variables));
+        if (context !== this.state.context) {
+          __privateMethod(this, _dispatch2, dispatch_fn2).call(this, {
+            type: "pending",
+            context,
+            variables
+          });
+        }
+      }
+      const data = await executeMutation();
+      await ((_f2 = (_e2 = __privateGet(this, _mutationCache).config).onSuccess) == null ? void 0 : _f2.call(
+        _e2,
+        data,
+        variables,
+        this.state.context,
+        this
+      ));
+      await ((_h2 = (_g2 = this.options).onSuccess) == null ? void 0 : _h2.call(_g2, data, variables, this.state.context));
+      await ((_j = (_i2 = __privateGet(this, _mutationCache).config).onSettled) == null ? void 0 : _j.call(
+        _i2,
+        data,
+        null,
+        this.state.variables,
+        this.state.context,
+        this
+      ));
+      await ((_l = (_k = this.options).onSettled) == null ? void 0 : _l.call(_k, data, null, variables, this.state.context));
+      __privateMethod(this, _dispatch2, dispatch_fn2).call(this, { type: "success", data });
+      return data;
+    } catch (error) {
+      try {
+        await ((_n = (_m = __privateGet(this, _mutationCache).config).onError) == null ? void 0 : _n.call(
+          _m,
+          error,
+          variables,
+          this.state.context,
+          this
+        ));
+        await ((_p = (_o = this.options).onError) == null ? void 0 : _p.call(
+          _o,
+          error,
+          variables,
+          this.state.context
+        ));
+        await ((_r = (_q = __privateGet(this, _mutationCache).config).onSettled) == null ? void 0 : _r.call(
+          _q,
+          void 0,
+          error,
+          this.state.variables,
+          this.state.context,
+          this
+        ));
+        await ((_t = (_s = this.options).onSettled) == null ? void 0 : _t.call(
+          _s,
+          void 0,
+          error,
+          variables,
+          this.state.context
+        ));
+        throw error;
+      } finally {
+        __privateMethod(this, _dispatch2, dispatch_fn2).call(this, { type: "error", error });
+      }
+    }
+  }
+}, _observers2 = new WeakMap(), _defaultOptions2 = new WeakMap(), _mutationCache = new WeakMap(), _retryer2 = new WeakMap(), _dispatch2 = new WeakSet(), dispatch_fn2 = function(action) {
+  const reducer = (state) => {
+    switch (action.type) {
+      case "failed":
+        return {
+          ...state,
+          failureCount: action.failureCount,
+          failureReason: action.error
+        };
+      case "pause":
+        return {
+          ...state,
+          isPaused: true
+        };
+      case "continue":
+        return {
+          ...state,
+          isPaused: false
+        };
+      case "pending":
+        return {
+          ...state,
+          context: action.context,
+          data: void 0,
+          failureCount: 0,
+          failureReason: null,
+          error: null,
+          isPaused: !canFetch(this.options.networkMode),
+          status: "pending",
+          variables: action.variables,
+          submittedAt: Date.now()
+        };
+      case "success":
+        return {
+          ...state,
+          data: action.data,
+          failureCount: 0,
+          failureReason: null,
+          error: null,
+          status: "success",
+          isPaused: false
+        };
+      case "error":
+        return {
+          ...state,
+          data: void 0,
+          error: action.error,
+          failureCount: state.failureCount + 1,
+          failureReason: action.error,
+          isPaused: false,
+          status: "error"
+        };
+    }
+  };
+  this.state = reducer(this.state);
+  notifyManager.batch(() => {
+    __privateGet(this, _observers2).forEach((observer) => {
+      observer.onMutationUpdate(action);
+    });
+    __privateGet(this, _mutationCache).notify({
+      mutation: this,
+      type: "updated",
+      action
+    });
+  });
+}, _f);
+function getDefaultState() {
+  return {
+    context: void 0,
+    data: void 0,
+    error: null,
+    failureCount: 0,
+    failureReason: null,
+    isPaused: false,
+    status: "idle",
+    variables: void 0,
+    submittedAt: 0
+  };
+}
+var MutationCache = (_g = class extends Subscribable {
+  constructor(config = {}) {
+    super();
+    __privateAdd(this, _mutations, void 0);
+    __privateAdd(this, _mutationId, void 0);
+    __privateAdd(this, _resuming, void 0);
+    this.config = config;
+    __privateSet(this, _mutations, []);
+    __privateSet(this, _mutationId, 0);
+  }
+  build(client2, options, state) {
+    const mutation = new Mutation({
+      mutationCache: this,
+      mutationId: ++__privateWrapper(this, _mutationId)._,
+      options: client2.defaultMutationOptions(options),
+      state
+    });
+    this.add(mutation);
+    return mutation;
+  }
+  add(mutation) {
+    __privateGet(this, _mutations).push(mutation);
+    this.notify({ type: "added", mutation });
+  }
+  remove(mutation) {
+    __privateSet(this, _mutations, __privateGet(this, _mutations).filter((x2) => x2 !== mutation));
+    this.notify({ type: "removed", mutation });
+  }
+  clear() {
+    notifyManager.batch(() => {
+      __privateGet(this, _mutations).forEach((mutation) => {
+        this.remove(mutation);
+      });
+    });
+  }
+  getAll() {
+    return __privateGet(this, _mutations);
+  }
+  find(filters) {
+    const defaultedFilters = { exact: true, ...filters };
+    return __privateGet(this, _mutations).find(
+      (mutation) => matchMutation(defaultedFilters, mutation)
+    );
+  }
+  findAll(filters = {}) {
+    return __privateGet(this, _mutations).filter(
+      (mutation) => matchMutation(filters, mutation)
+    );
+  }
+  notify(event) {
+    notifyManager.batch(() => {
+      this.listeners.forEach((listener) => {
+        listener(event);
+      });
+    });
+  }
+  resumePausedMutations() {
+    __privateSet(this, _resuming, (__privateGet(this, _resuming) ?? Promise.resolve()).then(() => {
+      const pausedMutations = __privateGet(this, _mutations).filter((x2) => x2.state.isPaused);
+      return notifyManager.batch(
+        () => pausedMutations.reduce(
+          (promise, mutation) => promise.then(() => mutation.continue().catch(noop)),
+          Promise.resolve()
+        )
+      );
+    }).then(() => {
+      __privateSet(this, _resuming, void 0);
+    }));
+    return __privateGet(this, _resuming);
+  }
+}, _mutations = new WeakMap(), _mutationId = new WeakMap(), _resuming = new WeakMap(), _g);
+function infiniteQueryBehavior(pages) {
+  return {
+    onFetch: (context, query) => {
+      const fetchFn = async () => {
+        var _a2, _b2, _c2, _d2, _e2;
+        const options = context.options;
+        const direction = (_c2 = (_b2 = (_a2 = context.fetchOptions) == null ? void 0 : _a2.meta) == null ? void 0 : _b2.fetchMore) == null ? void 0 : _c2.direction;
+        const oldPages = ((_d2 = context.state.data) == null ? void 0 : _d2.pages) || [];
+        const oldPageParams = ((_e2 = context.state.data) == null ? void 0 : _e2.pageParams) || [];
+        const empty = { pages: [], pageParams: [] };
+        let cancelled = false;
+        const addSignalProperty = (object) => {
+          Object.defineProperty(object, "signal", {
+            enumerable: true,
+            get: () => {
+              if (context.signal.aborted) {
+                cancelled = true;
+              } else {
+                context.signal.addEventListener("abort", () => {
+                  cancelled = true;
+                });
+              }
+              return context.signal;
+            }
+          });
+        };
+        const queryFn = context.options.queryFn && context.options.queryFn !== skipToken ? context.options.queryFn : () => {
+          return Promise.reject(
+            new Error(`Missing queryFn: '${context.options.queryHash}'`)
+          );
+        };
+        const fetchPage = async (data, param, previous) => {
+          if (cancelled) {
+            return Promise.reject();
+          }
+          if (param == null && data.pages.length) {
+            return Promise.resolve(data);
+          }
+          const queryFnContext = {
+            queryKey: context.queryKey,
+            pageParam: param,
+            direction: previous ? "backward" : "forward",
+            meta: context.options.meta
+          };
+          addSignalProperty(queryFnContext);
+          const page = await queryFn(
+            queryFnContext
+          );
+          const { maxPages } = context.options;
+          const addTo = previous ? addToStart : addToEnd;
+          return {
+            pages: addTo(data.pages, page, maxPages),
+            pageParams: addTo(data.pageParams, param, maxPages)
+          };
+        };
+        let result;
+        if (direction && oldPages.length) {
+          const previous = direction === "backward";
+          const pageParamFn = previous ? getPreviousPageParam : getNextPageParam;
+          const oldData = {
+            pages: oldPages,
+            pageParams: oldPageParams
+          };
+          const param = pageParamFn(options, oldData);
+          result = await fetchPage(oldData, param, previous);
+        } else {
+          result = await fetchPage(
+            empty,
+            oldPageParams[0] ?? options.initialPageParam
+          );
+          const remainingPages = pages ?? oldPages.length;
+          for (let i = 1; i < remainingPages; i++) {
+            const param = getNextPageParam(options, result);
+            result = await fetchPage(result, param);
+          }
+        }
+        return result;
+      };
+      if (context.options.persister) {
+        context.fetchFn = () => {
+          var _a2, _b2;
+          return (_b2 = (_a2 = context.options).persister) == null ? void 0 : _b2.call(
+            _a2,
+            fetchFn,
+            {
+              queryKey: context.queryKey,
+              meta: context.options.meta,
+              signal: context.signal
+            },
+            query
+          );
+        };
+      } else {
+        context.fetchFn = fetchFn;
+      }
+    }
+  };
+}
+function getNextPageParam(options, { pages, pageParams }) {
+  const lastIndex = pages.length - 1;
+  return options.getNextPageParam(
+    pages[lastIndex],
+    pages,
+    pageParams[lastIndex],
+    pageParams
+  );
+}
+function getPreviousPageParam(options, { pages, pageParams }) {
+  var _a2;
+  return (_a2 = options.getPreviousPageParam) == null ? void 0 : _a2.call(
+    options,
+    pages[0],
+    pages,
+    pageParams[0],
+    pageParams
+  );
+}
+var QueryClient = (_h = class {
+  constructor(config = {}) {
+    __privateAdd(this, _queryCache, void 0);
+    __privateAdd(this, _mutationCache2, void 0);
+    __privateAdd(this, _defaultOptions3, void 0);
+    __privateAdd(this, _queryDefaults, void 0);
+    __privateAdd(this, _mutationDefaults, void 0);
+    __privateAdd(this, _mountCount, void 0);
+    __privateAdd(this, _unsubscribeFocus, void 0);
+    __privateAdd(this, _unsubscribeOnline, void 0);
+    __privateSet(this, _queryCache, config.queryCache || new QueryCache());
+    __privateSet(this, _mutationCache2, config.mutationCache || new MutationCache());
+    __privateSet(this, _defaultOptions3, config.defaultOptions || {});
+    __privateSet(this, _queryDefaults, /* @__PURE__ */ new Map());
+    __privateSet(this, _mutationDefaults, /* @__PURE__ */ new Map());
+    __privateSet(this, _mountCount, 0);
+  }
+  mount() {
+    __privateWrapper(this, _mountCount)._++;
+    if (__privateGet(this, _mountCount) !== 1)
+      return;
+    __privateSet(this, _unsubscribeFocus, focusManager.subscribe(async (focused) => {
+      if (focused) {
+        await this.resumePausedMutations();
+        __privateGet(this, _queryCache).onFocus();
+      }
+    }));
+    __privateSet(this, _unsubscribeOnline, onlineManager.subscribe(async (online) => {
+      if (online) {
+        await this.resumePausedMutations();
+        __privateGet(this, _queryCache).onOnline();
+      }
+    }));
+  }
+  unmount() {
+    var _a2, _b2;
+    __privateWrapper(this, _mountCount)._--;
+    if (__privateGet(this, _mountCount) !== 0)
+      return;
+    (_a2 = __privateGet(this, _unsubscribeFocus)) == null ? void 0 : _a2.call(this);
+    __privateSet(this, _unsubscribeFocus, void 0);
+    (_b2 = __privateGet(this, _unsubscribeOnline)) == null ? void 0 : _b2.call(this);
+    __privateSet(this, _unsubscribeOnline, void 0);
+  }
+  isFetching(filters) {
+    return __privateGet(this, _queryCache).findAll({ ...filters, fetchStatus: "fetching" }).length;
+  }
+  isMutating(filters) {
+    return __privateGet(this, _mutationCache2).findAll({ ...filters, status: "pending" }).length;
+  }
+  getQueryData(queryKey) {
+    var _a2;
+    const options = this.defaultQueryOptions({ queryKey });
+    return (_a2 = __privateGet(this, _queryCache).get(options.queryHash)) == null ? void 0 : _a2.state.data;
+  }
+  ensureQueryData(options) {
+    const cachedData = this.getQueryData(options.queryKey);
+    if (cachedData === void 0)
+      return this.fetchQuery(options);
+    else {
+      const defaultedOptions = this.defaultQueryOptions(options);
+      const query = __privateGet(this, _queryCache).build(this, defaultedOptions);
+      if (options.revalidateIfStale && query.isStaleByTime(defaultedOptions.staleTime)) {
+        void this.prefetchQuery(defaultedOptions);
+      }
+      return Promise.resolve(cachedData);
+    }
+  }
+  getQueriesData(filters) {
+    return this.getQueryCache().findAll(filters).map(({ queryKey, state }) => {
+      const data = state.data;
+      return [queryKey, data];
+    });
+  }
+  setQueryData(queryKey, updater, options) {
+    const defaultedOptions = this.defaultQueryOptions({ queryKey });
+    const query = __privateGet(this, _queryCache).get(
+      defaultedOptions.queryHash
+    );
+    const prevData = query == null ? void 0 : query.state.data;
+    const data = functionalUpdate(updater, prevData);
+    if (data === void 0) {
+      return void 0;
+    }
+    return __privateGet(this, _queryCache).build(this, defaultedOptions).setData(data, { ...options, manual: true });
+  }
+  setQueriesData(filters, updater, options) {
+    return notifyManager.batch(
+      () => this.getQueryCache().findAll(filters).map(({ queryKey }) => [
+        queryKey,
+        this.setQueryData(queryKey, updater, options)
+      ])
+    );
+  }
+  getQueryState(queryKey) {
+    var _a2;
+    const options = this.defaultQueryOptions({ queryKey });
+    return (_a2 = __privateGet(this, _queryCache).get(options.queryHash)) == null ? void 0 : _a2.state;
+  }
+  removeQueries(filters) {
+    const queryCache = __privateGet(this, _queryCache);
+    notifyManager.batch(() => {
+      queryCache.findAll(filters).forEach((query) => {
+        queryCache.remove(query);
+      });
+    });
+  }
+  resetQueries(filters, options) {
+    const queryCache = __privateGet(this, _queryCache);
+    const refetchFilters = {
+      type: "active",
+      ...filters
+    };
+    return notifyManager.batch(() => {
+      queryCache.findAll(filters).forEach((query) => {
+        query.reset();
+      });
+      return this.refetchQueries(refetchFilters, options);
+    });
+  }
+  cancelQueries(filters = {}, cancelOptions = {}) {
+    const defaultedCancelOptions = { revert: true, ...cancelOptions };
+    const promises = notifyManager.batch(
+      () => __privateGet(this, _queryCache).findAll(filters).map((query) => query.cancel(defaultedCancelOptions))
+    );
+    return Promise.all(promises).then(noop).catch(noop);
+  }
+  invalidateQueries(filters = {}, options = {}) {
+    return notifyManager.batch(() => {
+      __privateGet(this, _queryCache).findAll(filters).forEach((query) => {
+        query.invalidate();
+      });
+      if (filters.refetchType === "none") {
+        return Promise.resolve();
+      }
+      const refetchFilters = {
+        ...filters,
+        type: filters.refetchType ?? filters.type ?? "active"
+      };
+      return this.refetchQueries(refetchFilters, options);
+    });
+  }
+  refetchQueries(filters = {}, options) {
+    const fetchOptions = {
+      ...options,
+      cancelRefetch: (options == null ? void 0 : options.cancelRefetch) ?? true
+    };
+    const promises = notifyManager.batch(
+      () => __privateGet(this, _queryCache).findAll(filters).filter((query) => !query.isDisabled()).map((query) => {
+        let promise = query.fetch(void 0, fetchOptions);
+        if (!fetchOptions.throwOnError) {
+          promise = promise.catch(noop);
+        }
+        return query.state.fetchStatus === "paused" ? Promise.resolve() : promise;
+      })
+    );
+    return Promise.all(promises).then(noop);
+  }
+  fetchQuery(options) {
+    const defaultedOptions = this.defaultQueryOptions(options);
+    if (defaultedOptions.retry === void 0) {
+      defaultedOptions.retry = false;
+    }
+    const query = __privateGet(this, _queryCache).build(this, defaultedOptions);
+    return query.isStaleByTime(defaultedOptions.staleTime) ? query.fetch(defaultedOptions) : Promise.resolve(query.state.data);
+  }
+  prefetchQuery(options) {
+    return this.fetchQuery(options).then(noop).catch(noop);
+  }
+  fetchInfiniteQuery(options) {
+    options.behavior = infiniteQueryBehavior(options.pages);
+    return this.fetchQuery(options);
+  }
+  prefetchInfiniteQuery(options) {
+    return this.fetchInfiniteQuery(options).then(noop).catch(noop);
+  }
+  resumePausedMutations() {
+    if (onlineManager.isOnline()) {
+      return __privateGet(this, _mutationCache2).resumePausedMutations();
+    }
+    return Promise.resolve();
+  }
+  getQueryCache() {
+    return __privateGet(this, _queryCache);
+  }
+  getMutationCache() {
+    return __privateGet(this, _mutationCache2);
+  }
+  getDefaultOptions() {
+    return __privateGet(this, _defaultOptions3);
+  }
+  setDefaultOptions(options) {
+    __privateSet(this, _defaultOptions3, options);
+  }
+  setQueryDefaults(queryKey, options) {
+    __privateGet(this, _queryDefaults).set(hashKey(queryKey), {
+      queryKey,
+      defaultOptions: options
+    });
+  }
+  getQueryDefaults(queryKey) {
+    const defaults = [...__privateGet(this, _queryDefaults).values()];
+    let result = {};
+    defaults.forEach((queryDefault) => {
+      if (partialMatchKey(queryKey, queryDefault.queryKey)) {
+        result = { ...result, ...queryDefault.defaultOptions };
+      }
+    });
+    return result;
+  }
+  setMutationDefaults(mutationKey, options) {
+    __privateGet(this, _mutationDefaults).set(hashKey(mutationKey), {
+      mutationKey,
+      defaultOptions: options
+    });
+  }
+  getMutationDefaults(mutationKey) {
+    const defaults = [...__privateGet(this, _mutationDefaults).values()];
+    let result = {};
+    defaults.forEach((queryDefault) => {
+      if (partialMatchKey(mutationKey, queryDefault.mutationKey)) {
+        result = { ...result, ...queryDefault.defaultOptions };
+      }
+    });
+    return result;
+  }
+  defaultQueryOptions(options) {
+    if (options._defaulted) {
+      return options;
+    }
+    const defaultedOptions = {
+      ...__privateGet(this, _defaultOptions3).queries,
+      ...this.getQueryDefaults(options.queryKey),
+      ...options,
+      _defaulted: true
+    };
+    if (!defaultedOptions.queryHash) {
+      defaultedOptions.queryHash = hashQueryKeyByOptions(
+        defaultedOptions.queryKey,
+        defaultedOptions
+      );
+    }
+    if (defaultedOptions.refetchOnReconnect === void 0) {
+      defaultedOptions.refetchOnReconnect = defaultedOptions.networkMode !== "always";
+    }
+    if (defaultedOptions.throwOnError === void 0) {
+      defaultedOptions.throwOnError = !!defaultedOptions.suspense;
+    }
+    if (!defaultedOptions.networkMode && defaultedOptions.persister) {
+      defaultedOptions.networkMode = "offlineFirst";
+    }
+    if (defaultedOptions.enabled !== true && defaultedOptions.queryFn === skipToken) {
+      defaultedOptions.enabled = false;
+    }
+    return defaultedOptions;
+  }
+  defaultMutationOptions(options) {
+    if (options == null ? void 0 : options._defaulted) {
+      return options;
+    }
+    return {
+      ...__privateGet(this, _defaultOptions3).mutations,
+      ...(options == null ? void 0 : options.mutationKey) && this.getMutationDefaults(options.mutationKey),
+      ...options,
+      _defaulted: true
+    };
+  }
+  clear() {
+    __privateGet(this, _queryCache).clear();
+    __privateGet(this, _mutationCache2).clear();
+  }
+}, _queryCache = new WeakMap(), _mutationCache2 = new WeakMap(), _defaultOptions3 = new WeakMap(), _queryDefaults = new WeakMap(), _mutationDefaults = new WeakMap(), _mountCount = new WeakMap(), _unsubscribeFocus = new WeakMap(), _unsubscribeOnline = new WeakMap(), _h);
+var QueryObserver = (_i = class extends Subscribable {
   constructor(client2, options) {
     super();
     __privateAdd(this, _executeFetch);
@@ -8840,7 +11115,7 @@ var QueryObserver = (_c = class extends Subscribable {
       type: "observerResultsUpdated"
     });
   });
-}, _c);
+}, _i);
 function shouldLoadOnMount(query, options) {
   return options.enabled !== false && query.state.data === void 0 && !(query.state.status === "error" && options.retryOnMount === false);
 }
@@ -8869,15 +11144,27 @@ function shouldAssignObserverCurrentProperties(observer, optimisticResult) {
 var QueryClientContext = reactExports.createContext(
   void 0
 );
-var useQueryClient = (queryClient) => {
+var useQueryClient = (queryClient2) => {
   const client2 = reactExports.useContext(QueryClientContext);
-  if (queryClient) {
-    return queryClient;
+  if (queryClient2) {
+    return queryClient2;
   }
   if (!client2) {
     throw new Error("No QueryClient set, use QueryClientProvider to set one");
   }
   return client2;
+};
+var QueryClientProvider = ({
+  client: client2,
+  children
+}) => {
+  reactExports.useEffect(() => {
+    client2.mount();
+    return () => {
+      client2.unmount();
+    };
+  }, [client2]);
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(QueryClientContext.Provider, { value: client2, children });
 };
 var IsRestoringContext = reactExports.createContext(false);
 var useIsRestoring = () => reactExports.useContext(IsRestoringContext);
@@ -8935,8 +11222,8 @@ var shouldSuspend = (defaultedOptions, result) => (defaultedOptions == null ? vo
 var fetchOptimistic = (defaultedOptions, observer, errorResetBoundary) => observer.fetchOptimistic(defaultedOptions).catch(() => {
   errorResetBoundary.clearReset();
 });
-function useBaseQuery(options, Observer, queryClient) {
-  const client2 = useQueryClient(queryClient);
+function useBaseQuery(options, Observer, queryClient2) {
+  const client2 = useQueryClient(queryClient2);
   const isRestoring = useIsRestoring();
   const errorResetBoundary = useQueryErrorResetBoundary();
   const defaultedOptions = client2.defaultQueryOptions(options);
@@ -8979,8 +11266,8 @@ function useBaseQuery(options, Observer, queryClient) {
   }
   return !defaultedOptions.notifyOnChangeProps ? observer.trackResult(result) : result;
 }
-function useQuery(options, queryClient) {
-  return useBaseQuery(options, QueryObserver, queryClient);
+function useQuery(options, queryClient2) {
+  return useBaseQuery(options, QueryObserver, queryClient2);
 }
 const fetchCharacters = async (props) => {
   const { id: id2, page = 1 } = props || {};
@@ -9018,7 +11305,40 @@ const HomePageTsx = () => {
     /* @__PURE__ */ jsxRuntimeExports.jsx("button", { disabled: page <= 1, onClick: handleBack, children: "BACK" })
   ] });
 };
+const DetailPage = () => {
+  const { id: id2 } = useParams();
+  const { isLoading, isError, data } = useQuery({
+    queryKey: ["characters", id2],
+    queryFn: () => fetchCharacters({ id: Number(id2) })
+  });
+  if (isLoading)
+    return /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "loader" });
+  if (isError)
+    return /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "error" });
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
+    /* @__PURE__ */ jsxRuntimeExports.jsx("h1", { children: data == null ? void 0 : data.name }),
+    /* @__PURE__ */ jsxRuntimeExports.jsx("img", { src: data == null ? void 0 : data.image }),
+    /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
+      "species: ",
+      data == null ? void 0 : data.species
+    ] }),
+    /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { fontSize: "20px" }, children: [
+      "gender: ",
+      (data == null ? void 0 : data.gender.toLowerCase()) === "male" ? "♂️" : "♀️"
+    ] })
+  ] });
+};
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: Infinity
+    }
+  }
+});
 function App() {
-  return /* @__PURE__ */ jsxRuntimeExports.jsx(HomePageTsx, {});
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(BrowserRouter, { children: /* @__PURE__ */ jsxRuntimeExports.jsx(QueryClientProvider, { client: queryClient, children: /* @__PURE__ */ jsxRuntimeExports.jsxs(Routes, { children: [
+    /* @__PURE__ */ jsxRuntimeExports.jsx(Route, { path: "/r-m", element: /* @__PURE__ */ jsxRuntimeExports.jsx(HomePageTsx, {}) }),
+    /* @__PURE__ */ jsxRuntimeExports.jsx(Route, { path: "/characters/:id", element: /* @__PURE__ */ jsxRuntimeExports.jsx(DetailPage, {}) })
+  ] }) }) });
 }
 client.createRoot(document.getElementById("root")).render(/* @__PURE__ */ jsxRuntimeExports.jsx(App, {}));
