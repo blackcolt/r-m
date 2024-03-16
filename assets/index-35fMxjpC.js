@@ -8354,13 +8354,6 @@ function useNavigateUnstable() {
   }, [basename, navigator2, routePathnamesJson, locationPathname, dataRouterContext]);
   return navigate;
 }
-function useParams() {
-  let {
-    matches
-  } = reactExports.useContext(RouteContext);
-  let routeMatch = matches[matches.length - 1];
-  return routeMatch ? routeMatch.params : {};
-}
 function useResolvedPath(to, _temp2) {
   let {
     relative
@@ -11305,29 +11298,6 @@ const HomePageTsx = () => {
     /* @__PURE__ */ jsxRuntimeExports.jsx("button", { disabled: page <= 1, onClick: handleBack, children: "BACK" })
   ] });
 };
-const DetailPage = () => {
-  const { id: id2 } = useParams();
-  const { isLoading, isError, data } = useQuery({
-    queryKey: ["characters", id2],
-    queryFn: () => fetchCharacters({ id: Number(id2) })
-  });
-  if (isLoading)
-    return /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "loader" });
-  if (isError)
-    return /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "error" });
-  return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
-    /* @__PURE__ */ jsxRuntimeExports.jsx("h1", { children: data == null ? void 0 : data.name }),
-    /* @__PURE__ */ jsxRuntimeExports.jsx("img", { src: data == null ? void 0 : data.image }),
-    /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
-      "species: ",
-      data == null ? void 0 : data.species
-    ] }),
-    /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { fontSize: "20px" }, children: [
-      "gender: ",
-      (data == null ? void 0 : data.gender.toLowerCase()) === "male" ? "♂️" : "♀️"
-    ] })
-  ] });
-};
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -11336,9 +11306,6 @@ const queryClient = new QueryClient({
   }
 });
 function App() {
-  return /* @__PURE__ */ jsxRuntimeExports.jsx(BrowserRouter, { children: /* @__PURE__ */ jsxRuntimeExports.jsx(QueryClientProvider, { client: queryClient, children: /* @__PURE__ */ jsxRuntimeExports.jsxs(Routes, { children: [
-    /* @__PURE__ */ jsxRuntimeExports.jsx(Route, { path: "/", element: /* @__PURE__ */ jsxRuntimeExports.jsx(HomePageTsx, {}) }),
-    /* @__PURE__ */ jsxRuntimeExports.jsx(Route, { path: "/characters/:id", element: /* @__PURE__ */ jsxRuntimeExports.jsx(DetailPage, {}) })
-  ] }) }) });
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(BrowserRouter, { children: /* @__PURE__ */ jsxRuntimeExports.jsx(QueryClientProvider, { client: queryClient, children: /* @__PURE__ */ jsxRuntimeExports.jsx(Routes, { children: /* @__PURE__ */ jsxRuntimeExports.jsx(HomePageTsx, {}) }) }) });
 }
 client.createRoot(document.getElementById("root")).render(/* @__PURE__ */ jsxRuntimeExports.jsx(App, {}));
