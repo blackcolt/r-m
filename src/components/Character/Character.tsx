@@ -14,7 +14,7 @@ export const Character: FC<CharacterProps> = (props) => {
   return (
     <div style={{ display: "inline-grid", margin: "10px" }}>
       <Link to={`/r-m/characters/${id}`}>
-        <LazyLoadImage src={image} />
+        <LazyLoadImage onLoad={() => console.log(1)} src={image} />
         <div className="name">{name}</div>
         <div className="specie">{species}</div>
       </Link>
