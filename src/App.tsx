@@ -3,6 +3,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import HomePageTsx from "./pages/HomePage/HomePage";
 import DetailPage from "./pages/DetailPage/DetailPage";
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
+import { PageTransition } from "@steveeeie/react-page-transition";
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
