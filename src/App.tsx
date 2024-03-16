@@ -1,7 +1,7 @@
 import "./App.css";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes } from "react-router-dom";
 import HomePageTsx from "./pages/HomePage/HomePage";
-import DetailPage from "./pages/DetailPage/DetailPage";
+// import DetailPage from "./pages/DetailPage/DetailPage";
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -16,8 +16,9 @@ function App() {
     <BrowserRouter>
       <QueryClientProvider client={queryClient}>
         <Routes>
-          <Route path="/" element={<HomePageTsx />}></Route>
-          <Route path="/characters/:id" element={<DetailPage />}></Route>
+          <HomePageTsx />
+          {/* <Route path="/" element={<HomePageTsx />}></Route>
+          <Route path="/characters/:id" element={<DetailPage />}></Route> */}
         </Routes>
       </QueryClientProvider>
     </BrowserRouter>
