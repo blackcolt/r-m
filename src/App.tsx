@@ -16,7 +16,7 @@ function App() {
     <BrowserRouter>
       <QueryClientProvider client={queryClient}>
         <Routes>
-          <Route path="/characters/:id" element={<DetailPage />}></Route>
+          <Route path="/r-m/characters/:id" element={<DetailPage />}></Route>
           <Route path="*" element={<HomePageTsx />}></Route>
         </Routes>
       </QueryClientProvider>
