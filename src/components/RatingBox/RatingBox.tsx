@@ -38,7 +38,7 @@ export const RatingBox = (props: RatingBoxProps) => {
     <>
       <StyledRating
         name="customized-color"
-        defaultValue={rating}
+        value={rating}
         getLabelText={(value: number) =>
           `${value} Heart${value !== 1 ? "s" : ""}`
         }
